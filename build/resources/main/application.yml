@@ -1,25 +1,16 @@
 server:
-  port: 8000
+  port: 8000 # 서버 포트설정
   servlet:
     context-path: /blog # 진입점 : localhost:8000/blog/
 
 spring:
-
-#  thymeleaf:
-#    mode: HTML
-#    encoding: UTF-8
-#    check-template-location: true
-#    suffix: .html
-#    prefix: classpath:/templates/
-#    cache: false
-
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver # mysql 설정
     url: jdbc:mysql://localhost:3306/blog?serverTimezone=Asia/Seoul
     username: root
     password: hks13579
 
-  jpa:
+  jpa: # jpa 설정
     open-in-view: true
     hibernate:
       ddl-auto: update # create:생성모드, update:업데이트모드, none: 생성,업데이트 (x)

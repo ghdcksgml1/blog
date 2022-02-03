@@ -1,5 +1,6 @@
 let index = {
     init:function(){
+        // btn-save 버튼이 클릭되면, save함수를 호출
         document.querySelector("#btn-save").addEventListener('click',()=>{
             this.save();
         });
@@ -14,16 +15,15 @@ let index = {
 
         // console.log(data);
 
-        // ajax
+        // ajax 요청
         fetch('/blog/api/user',{
             method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)
-
         })
             .then(response => response.json())
             .then(data=>{
                 alert("회원가입 완료");
                 console.log(data);
-                // location.href="/blog";
+                location.href="/blog";
             })
             .catch(error=>{alert(error.message)});
     }

@@ -4,6 +4,7 @@ import com.cos.blog.model.User;
 import com.cos.blog.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -11,14 +12,13 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public Integer 회원가입(User user){
-        try{
-            userRepository.save(user);
-            return 1;
-        }catch(Exception e){
-            e.printStackTrace();
-            System.out.println("UserService 회원가입 : "+e.getMessage());
-        }
-        return -1;
+    @Transactional
+    public void 회원가입(User user){
+        userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true) // Select 할때 트랜잭션 시작, 서비스 종료시에 트랜잭션 종료 (정합성)
+    public User 로그인(User user){
+        return userRepository.login(user.getUsername(), user.getPassword());
     }
 }

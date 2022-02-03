@@ -5,7 +5,7 @@
 <div class="container">
   <div th:replace="/layout/fragments/bodyHeader::bodyHeader"/>
   <br/>
-  <form action="/action_page.php">
+  <form>
     <div class="form-group">
       <label for="username">Username</label>
       <input type="text" class="form-control" placeholder="Enter username" id="username">
@@ -19,10 +19,11 @@
         <input class="form-check-input" type="checkbox"> Remember me
       </label>
     </div>
-    <button type="submit" class="btn btn-primary">로그인</button>
   </form>
+  <button id="btn-login" type="submit" class="btn btn-primary">로그인</button>
   <div th:replace="/layout/fragments/footer::footer"/>
 </div>
+<script src="/blog/js/login.js"></script>
 </html>
 
 
