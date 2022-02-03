@@ -3,12 +3,33 @@
 ## 📁 application.yml
 
 ```yml
+server:
+  port: 8000 # 서버 포트설정
+  servlet:
+    context-path: /blog # 진입점 : localhost:8000/blog/
+
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver # mysql 설정
     url: jdbc:mysql://localhost:3306/blog?serverTimezone=Asia/Seoul
     username: root
-    password: 
+    password: hks13579
+
+  jpa: # jpa 설정
+    open-in-view: true
+    hibernate:
+      ddl-auto: update # create:생성모드, update:업데이트모드, none: 생성,업데이트 (x)
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl # 테이블을 만들때 변수명 그대로 테이블에 넣어줌.
+      use-new-id-generator-mappings: false # false: jpa가 사용하는 기본 넘버링 전략을 따라가지 않는다.
+    show-sql: true # 쿼리 보여주기
+    properties:
+      hibernate.format_sql: true # 쿼리 예쁘게 보여주기
+
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
 ```
 <br/>
 
@@ -151,3 +172,72 @@ JSON 데이터를 받기 위해서는 @ResponseBody 태그를 써줘야한다.
 
 나머지 @PutMapping과 @DeleteMapping도 마찬가지로 @PostMapping과 비슷한 일을 수행한다.
   
+<br/>
+  
+## 📁 AJAX 요청
+
+일단, ajax 요청을 하기 위해서는 자바스크립트의 도움이 필요하다.
+
+static폴더에 js 폴더를 하나 만들어 user.js를 만들자.
+
+```javascript
+// 폴더 경로 : /resources/static/js/user.js
+let index = {
+    init:function(){
+        // btn-save 버튼이 클릭되면, save함수를 호출
+        document.querySelector("#btn-save").addEventListener('click',()=>{
+            this.save();
+        });
+    },
+
+    save:function(){
+        let data = {
+            username: document.querySelector("#username").value,
+            password: document.querySelector("#password").value,
+            email: document.querySelector("#email").value
+        }
+
+        // console.log(data);
+
+        // ajax 요청
+        fetch('/blog/api/user',{
+            method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data=>{
+                alert("회원가입 완료");
+                console.log(data);
+                // location.href="/blog";
+            })
+            .catch(error=>{alert(error.message)});
+    }
+};
+
+index.init();
+```
+
+위와 같이 jQuery 대신에 Javascript로 ajax 요청을 하기위해서는 fetch 함수가 필요하다.
+
+fetch함수는 Promise객체로 리턴이 되기 때문에, 별도의 response.json()과 같이 Promise객체 => json 으로의 변환이 필요하다.
+
+### ajax 사용 시 장점
+
+- 웹페이지의 속도가 향상된다.
+- 서버의 처리가 완료될 때까지 기다리지 않고 처리가 가능하다.
+- 서버에서 Data만 전송하면 되므로 전체적인 코딩의 양이 줄어든다.
+- 기존 웹에서는 불가능했던 다양한 UI를 가능하게 해준다.
+
+<br/>
+
+### ajax 사용 시 단점
+
+- 히스토리 관리가 되지 않는다.
+- 페이지 이동 없는 통신으로 인한 보안상의 문제가 있다.
+- 연속으로 데이터를 요청하면 서버 부하가 증가할 수 있다.
+- ajax를 쓸 수 없는 브라우저에서 문제가 발생한다.
+- HTTP 클라이언트의 기능이 한정되어 있다.
+- 지원하는 Charset이 한정되어 있다.
+- script로 작성되므로 디버깅이 용이하지 않다.
+- 동일-출처 정책으로 다른 도메인과는 통신이 불가능하다.
+
+<br/>
