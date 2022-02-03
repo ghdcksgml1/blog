@@ -289,3 +289,59 @@ Lazy Loading 방식을 쓰기 위해서는 application.yml의 jpa 설정에서 o
 만약, open-in-view: false를 쓰게된다면, Service 계층에서 영속성 컨텍스트와 JDBC, Transaction 연결이 연결되고 끊기게 된다.
 
 즉, Controller에서 영속성 컨텍스트로 접근이 불가하다.
+
+## 📁 로그인 방식
+
+### 전통적인 로그인 구현 방식
+
+userService에서 로그인 함수를 실행시키고, ( 로그인 함수는 @RequestBody로 받은 User의 아이디와 패스워드가 일치하는지 확인 )
+
+아래의 코드처럼 HttpSession 을 통해 세션을 생성한다.
+
+```java
+    @PostMapping("/api/user/login")
+    public ResponseDto<Integer> login(@RequestBody User user, HttpSession session){
+        User principal = userService.로그인(user);
+        if(principal != null){
+            session.setAttribute("principle",principal);
+        }
+        return new ResponseDto<Integer>(HttpStatus.OK.value(),1);
+    }
+```
+
+thymeleaf에서 세션값을 통해 세션별 표시할 정보를 구분해준다.
+
+```html
+<!-- fragment bodyHeader 파일 -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="bodyHeader">
+    <nav class="navbar navbar-expand-md bg-dark navbar-dark">
+        <a class="navbar-brand" href="/blog">홈</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul th:if="${session.principle == null}" class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/blog/user/loginForm">로그인</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/blog/user/joinForm">회원가입</a>
+                </li>
+            </ul>
+            <ul th:if="${session.principle != null}" class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/blog/board/writeForm">글쓰기</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/blog/user/userForm">내 정보</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/blog/user/logout">로그아웃</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+```
