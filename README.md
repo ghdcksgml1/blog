@@ -16,7 +16,7 @@ spring:
     password: hks13579
 
   jpa: # jpa 설정
-    open-in-view: true
+    open-in-view: true # lazy Loading
     hibernate:
       ddl-auto: update # create:생성모드, update:업데이트모드, none: 생성,업데이트 (x)
       naming:
@@ -241,3 +241,51 @@ fetch함수는 Promise객체로 리턴이 되기 때문에, 별도의 response.j
 - 동일-출처 정책으로 다른 도메인과는 통신이 불가능하다.
 
 <br/>
+
+## 📁 스트링 부트의 트랜잭션
+
+전통적인 방식은 영속성 컨텍스트, JDBC, 트랜잭션을 모두 같은 구간에서 연결했지만, 
+
+- lazy Loading을 위해, 세션의 시작은 서블릿이 시작되는 시점부터 (세션은 영속성 컨텍스트를 포함)
+
+- 트랜잭션과 JDBC의 시작은 Service 레이어부터
+
+- 트랜잭션과 JDBC의 종료는 Service 레이어에서 종료
+
+- 세션(영속성 컨텍스트)은 컨트롤러 영역까지 끌고가기 때문에 영속성이 보장되어 select가 가능해지고, lazy Loading이 가능해진다.
+
+<img width="782" alt="스크린샷 2022-02-03 오후 6 06 27" src="https://user-images.githubusercontent.com/79779676/152312415-d7b9bb42-d790-4007-b240-23fe5de43dff.png">
+
+<br/>
+
+### - 전통적인 방식
+
+전통적인 방식은 아래와같이 세션 시작시점에 영속성 컨텍스트, JDBC, Transaction 연결을 한번에 실행하고 한번에 종료한다.
+
+<img width="896" alt="스크린샷 2022-02-03 오후 6 30 45" src="https://user-images.githubusercontent.com/79779676/152316840-86c0a596-10ab-4101-9aca-e986cb885c31.png">
+
+<br/>
+
+### - lazy Loading 방식
+
+lazy Loading 방식은 위에서 설명한것처럼 세션이 시작될때 영속성 컨텍스트가 실행되고, Service 시점부터 JDBC와 Transaction의 연결이 연결되고, 끊긴다.
+
+아래의 그림은 최초 선수 정보를 가져왔을때인데, 선수 정보는 객체를 가져왔지만, 선수 정보의 외래키인 팀 정보는 프록시 객체로 가져온다.
+
+<img width="912" alt="스크린샷 2022-02-03 오후 6 35 04" src="https://user-images.githubusercontent.com/79779676/152317121-cb019e98-f9e8-4e62-bb17-7125e46209fe.png">
+
+<br/>
+
+이렇게 선수 정보만 필요한 경우에는 Controller에서 그냥 쓰면 된다.
+
+만약, 팀 정보를 쓸일이 있어 팀 정보의 프록시 객체를 호출하게 되면, 다시 JDBC 연결을 통해 select문을 실시해 프록시 객체가 아닌 진짜 팀 정보 객체를 가져와준다.
+
+<img width="919" alt="스크린샷 2022-02-03 오후 6 35 52" src="https://user-images.githubusercontent.com/79779676/152317768-2cf9bb01-410f-494e-bb44-0576599ba57b.png">
+
+##
+
+Lazy Loading 방식을 쓰기 위해서는 application.yml의 jpa 설정에서 open-in-view: true 설정을 해주면 된다. ( 맨위에 나와있음. 그리고 Default는 true임 )
+
+만약, open-in-view: false를 쓰게된다면, Service 계층에서 영속성 컨텍스트와 JDBC, Transaction 연결이 연결되고 끊기게 된다.
+
+즉, Controller에서 영속성 컨텍스트로 접근이 불가하다.
