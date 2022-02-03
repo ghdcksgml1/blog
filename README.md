@@ -282,7 +282,7 @@ lazy Loading 방식은 위에서 설명한것처럼 세션이 시작될때 영�
 
 <img width="919" alt="스크린샷 2022-02-03 오후 6 35 52" src="https://user-images.githubusercontent.com/79779676/152317768-2cf9bb01-410f-494e-bb44-0576599ba57b.png">
 
-##
+### 사용법
 
 Lazy Loading 방식을 쓰기 위해서는 application.yml의 jpa 설정에서 open-in-view: true 설정을 해주면 된다. ( 맨위에 나와있음. 그리고 Default는 true임 )
 
