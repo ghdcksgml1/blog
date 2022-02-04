@@ -16,14 +16,14 @@ let index = {
         // console.log(data);
 
         // ajax 요청
-        fetch('/blog/api/user',{
+        fetch('/auth/joinProc',{
             method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)
         })
             .then(response => response.json())
             .then(data=>{
                 alert("회원가입 완료");
                 console.log(data);
-                location.href="/blog";
+                location.href="/";
             })
             .catch(error=>{alert(error.message)});
     }

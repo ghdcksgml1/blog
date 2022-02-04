@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 // @Repository 생략 가능하다.
 public interface UserRepository extends JpaRepository<User,Long> {
 
-    @Query(value = "select * from user where username = ?1 and password = ?2",nativeQuery = true)
-    User login(String username, String password);
 }
+
+//    @Query(value = "select * from user where username = ?1 and password = ?2",nativeQuery = true)
+//    User login(String username, String password);

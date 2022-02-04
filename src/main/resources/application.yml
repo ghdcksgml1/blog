@@ -1,7 +1,7 @@
 server:
   port: 8000 # 서버 포트설정
   servlet:
-    context-path: /blog # 진입점 : localhost:8000/blog/
+    context-path: / # 진입점 : localhost:8000/blog/
 
 spring:
   datasource:
