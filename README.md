@@ -290,9 +290,9 @@ Lazy Loading 방식을 쓰기 위해서는 application.yml의 jpa 설정에서 o
 
 즉, Controller에서 영속성 컨텍스트로 접근이 불가하다.
 
-## 📁 로그인 방식
+## 📁 전통적인 로그인 방식
 
-### 전통적인 로그인 구현 방식
+### 전통적인 로그인 구현
 
 userService에서 로그인 함수를 실행시키고, ( 로그인 함수는 @RequestBody로 받은 User의 아이디와 패스워드가 일치하는지 확인 )
 
@@ -345,3 +345,114 @@ thymeleaf에서 세션값을 통해 세션별 표시할 정보를 구분해준�
     </nav>
 </div>
 ```
+
+<br/>
+
+## 📁 스프링 시큐리티
+
+[참고자료](https://sjh836.tistory.com/165)
+
+스프링 시큐리티는 스프링 기반의 어플리케이션의 보안(인증과 권한)을 담당하는 프레임워크이다.
+
+만약 스프링 시큐리티를 사용하지 않았다면, 위의 전통적인 방법처럼 자체적으로 세션을 체크하고, redirect등을 해야한다.
+
+spring security는 filter 기반으로 동작하기 때문에 spring MVC와 분리되어 관리 및 동작한다.
+
+### 보안 관련 용어
+
+- 접근 주체(Principal) : 보호된 대상에 접근하는 유저
+- 인증 (Authenticate) : 현재 유저가 누구인지 확인 ex) 로그인
+  - 애플리케이션의 작업을 수행할 수 있는 주체임을 증명한다.
+- 인가 (Authorize) : 현재 유저가 어떤 서비스, 페이지에 접근할 수 있는 권한이 있는지 검사
+- 권한 : 인증된 주체가 애플리케이션의 동작을 수행할 수 있도록 허락되어있는지를 결정
+  - 권한 승인이 필요한 부분으로 접근하려면 인증 과정을 통해 주체가 증명 되어야만 한다.
+  - 권한 부여에도 두가지 영역이 존재하는데 웹 요청 권한, 메소드 호출 및 도메인 인스턴스에 대한 접근 권한 부여
+
+<br/>
+
+### 타임리프에서 자바 시큐리티 사용하기
+
+```java
+// build.gradle
+  implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
+```
+
+```html
+<!-- html 파일 -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+```
+
+기존의 태그에서 xmlns:sec 가 추가 된 형태이다.
+
+아래와 같이 사용할 수 있다.
+  
+```html
+  <!--ROLE_USER 권한을 갖는다면 이 글이 보임-->
+  <h1 sec:authorize="hasRole('ADMIN')">Has admin Role</h1>
+
+  <!--ROLE_ADMIN 권한을 갖는다면 이 글이 보임-->
+  <h1 sec:authorize="hasRole('USER')">Has user Role</h1> 
+
+  <!--어떤 권한이건 상관없이 인증이 되었다면 이 글이 보임-->
+  <div sec:authorize="isAuthenticated()">
+      Only Authenticated user can see this Text
+  </div>
+  
+  <!--인증되지 않은 사용자의 경우 이 글이 보임-->
+  <div sec:authorize="isAnonymous()">
+      Only Authenticated user can see this Text
+  </div>
+
+  <!--인증시 사용된 객체에 대한 정보-->
+  <b>Authenticated DTO:</b>
+  <div sec:authentication="principal"></div>
+
+  <!--인증시 사용된 객체의 Username (ID)-->
+  <b>Authenticated username:</b>
+  <div sec:authentication="name"></div>
+
+  <!--객체의 권한-->
+  <b>Authenticated user role:</b>
+  <div sec:authentication="principal.authorities"></div>
+```
+
+<br/>
+
+### 로그인 페이지 커스터마이징 하기
+
+blog 패키지에 config 패키지를 하나 생성하고, SecurityConfig 클래스를 생성해준다.
+
+```java
+package com.cos.blog.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+// 빈 등록: 스프링 컨테이너에서 객체를 관리할 수 있게 하는 것
+@Configuration // 빈 등록: IoC
+@EnableWebSecurity // 필터 추가: 시큐리티 필터를 거는 것
+@EnableGlobalAuthentication // 특정 주소로 접근을하면 권한 및 인증을 미리 체크하는 것
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception{
+        http
+                .authorizeRequests()
+                    .antMatchers("/auth/**")// /auth/ 이하의 모든 경로는
+                    .permitAll() // 누구나 접근이 가능하다
+                    .anyRequest() // 그게 아니고는
+                    .authenticated() // 허락된 사람만 접근 가능하다.
+                .and()
+                    .formLogin()
+                    .loginPage("/auth/loginForm");
+    }
+}
+
+```
+
+위와 같이 WebSecurityConfigurerAdapter를 상속하고, configure를 Override 하면, login 페이지 커스터마이징이 가능해진다.
+
+
