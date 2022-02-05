@@ -455,4 +455,60 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 위와 같이 WebSecurityConfigurerAdapter를 상속하고, configure를 Override 하면, login 페이지 커스터마이징이 가능해진다.
 
+<br/>
 
+### 비밀번호 해시값으로 변경하기
+
+감사하게도, 문자열을 넣으면 해시값으로 변경해주는 클래스를 Spring Security에서 지원해준다.
+
+우리는 BCryptPasswordEncoder를 쓸 것이다.
+
+```java
+package com.cos.blog.config;
+
+  @Bean // 스프링이 관리하는 IoC가 된다.
+  BCryptPasswordEncoder encodePWD(){ return new BCryptPasswordEncoder(); }
+```
+
+위와같이 SecurityConfig 클래스에 해당 메소드를 추가해주면 된다. @Bean 어노테이션을 통해 스프링 IoC에서 관리하도록 한다.
+
+BCryptPasswordEncoder의 encode( ) 메소드를 사용하면 String Wrapper Class 로 해시된 값을 반환해준다.
+
+기존에 회원가입을 할 때 password 그대로 DB에 저장했지만, 이제는 해시로 변환된 값을 넣어준다.
+
+바뀐 회원가입 Service 객체를 봐보쟈.
+
+```java
+package com.cos.blog.service;
+
+import com.cos.blog.model.RoleType;
+import com.cos.blog.model.User;
+import com.cos.blog.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository; // 의존성 주입
+
+    private final BCryptPasswordEncoder encoder; // BCryptPasswordEncoder 클래스 의존성 주입
+
+    @Transactional
+    public void 회원가입(User user){
+        String rawPassword = user.getPassword(); // 원래 password
+        String encPassword = encoder.encode(rawPassword); // 해시
+        user.setPassword(encPassword);
+        user.setRole(RoleType.USER);
+        userRepository.save(user);
+    }
+
+}
+```
+
+위 코드와 같이 원래 User 객체를 받아서 rawPassword를 해시값으로 변경해주고, 변경된 해시값을 User 객체의 password로 설정해준다.
+
+그 뒤에 userRepository.save() 메소드를 통해 DB에 회원정보를 저장한다.
