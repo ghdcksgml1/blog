@@ -546,3 +546,205 @@ ghdcksgml라는 유저에게 100포인트가 지급된다고 해보자.
 <img width="814" alt="스크린샷 2022-02-08 오후 4 59 35" src="https://user-images.githubusercontent.com/79779676/152943017-edc70a0d-db25-4279-a513-802d72578edf.png">
 
 출처: https://lucete1230-cyberpolice.tistory.com/23
+
+<br/>
+
+### 스프링 시큐리티 로그인
+
+스프링 시큐리티가 로그인 요청을 가로채게 만든다.
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception{
+        http
+                .csrf().disable() // csrf 토큰 비활성화 (테스트시 걸어두는 게 좋음)
+                .authorizeRequests()
+                    .antMatchers("/","/auth/**","/js/**","/css/**","/image/**")// /auth/ 이하의 모든 경로는
+                    .permitAll() // 누구나 접근이 가능하다
+                .anyRequest() // 그게 아니고는
+                    .authenticated() // 허락된 사람만 접근 가능하다.
+                .and()
+                    .formLogin()
+                    .loginPage("/auth/loginForm")
+                    .loginProcessingUrl("/auth/loginProc") // 스프링 시큐리티가 해당 주소로 요청오는 로그인을 가로채서 대신 로그인 해준다.
+                    .defaultSuccessUrl("/");
+    }
+```
+
+위 코드처럼 "/auth/loginFrom" 이라는 요청이 들어오면, 스프링 시큐리티가 해당 요청을 가로채 대신 로그인 해준다.
+
+antMatchers에 설정된 페이지를 제외한 모든 페이지의 요청은 loginPage로 넘어온다. 
+
+defaultSuccessUrl은 정상적으로 완료되면, 해당 URL로 이동한다.
+
+<br/>
+
+가로채서 로그인을 할 때 그때 내가 만들어야될 클래스가 하나 있다.
+
+바로, UserDetails를 가지고 있는 User Object를 만들어야한다. (로그인 요청을 하고 세션에 등록을 해줘야하는데 그냥 User 오브젝트를 리턴하면 타입이 맞지 않기때문에)
+
+```java
+package com.cos.blog.config.auth;
+
+import com.cos.blog.model.User;
+import lombok.AllArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+// 스프링 시큐리티가 로그인 요청을 가로채서 로그인을 진행하고 완료가 되면, UserDetails 타입의 오브젝트를
+// 스프링 시큐리티의 고유한 세션저장소에 저장을 해준다.
+@AllArgsConstructor
+public class PrincipalDetail implements UserDetails {
+    
+    private User user; // composition
+
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUsername();
+    }
+
+    // 계정이 만료되지 않았는지 리턴한다. (true:만료안됨)
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    // 계정이 잠겨있는지 않았는지 리턴한다. (true:잠기지 않음)
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    // 비밀번호가 만료되지 않았는지 리턴한다. (true:만료안됨)
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    // 계정이 활성화(사용가능)인지 리턴한다. (true:활성화)
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    // 계정이 갖고있는 권한 목록을 리턴한다. (권한이 여러개 있을 수 있어서 루프를 돌아야 하는데 우리는 1개밖에 없음.)
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+
+        Collection<GrantedAuthority> collectors = new ArrayList<>();
+
+        collectors.add(()->{ return "ROLE_"+user.getRole();}); // 앞에 ROLE_을 붙이는건 자바 시큐리티 규칙임.
+
+        return collectors;
+    }
+}
+
+```
+
+```java
+package com.cos.blog.config.auth;
+
+import com.cos.blog.model.User;
+import com.cos.blog.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service // Bean 등록
+@RequiredArgsConstructor
+public class PrincipalDetailService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    // 스프링이 로그인 요청을 가로챌때, username,password 변수 2개를 가로채는데
+    // password 부분 처리는 알아서 함.
+    // username이 DB에 있는지만 확인해주면 됨.
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User principal = userRepository.findByUsername(username) // username이 일치하는 사용자 찾기
+                .orElseThrow(()->{
+                    return new UsernameNotFoundException("해당 사용자를 찾을 수 없습니다.");
+                });
+        return new PrincipalDetail(principal); // 시큐리티의 세션에 유저 정보가 저장이 됨.
+    }
+}
+
+```
+
+```java
+package com.cos.blog.config;
+
+import com.cos.blog.config.auth.PrincipalDetailService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+// 빈 등록: 스프링 컨테이너에서 객체를 관리할 수 있게 하는 것
+@Configuration // 빈 등록: IoC
+@EnableWebSecurity // 필터 추가: 시큐리티 필터를 거는 것
+@EnableGlobalAuthentication // 특정 주소로 접근을하면 권한 및 인증을 미리 체크하는 것
+@RequiredArgsConstructor
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private final PrincipalDetailService principalDetailService; // DI
+
+    @Bean // 스프링이 관리하는 IoC가 된다.
+    public BCryptPasswordEncoder encodePWD(){
+        return new BCryptPasswordEncoder();
+    }
+
+    // 시큐리티가 대신 로그인해주는데 password를 가로채기를 하는데
+    // 해당 password가 뭘로 해쉬가 되어 회원가입이 되었는지 알아야
+    // 같은 해쉬로 암호화해서 DB에 있는 해쉬랑 비교할 수 있음.
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(principalDetailService).passwordEncoder(encodePWD());
+        // principalDetailService를 통해서 로그인을할 때 password를 encodePWD로 인코드해서 비교를 알아서 해준다.
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception{
+        http
+                .csrf().disable() // csrf 토큰 비활성화 (테스트시 걸어두는 게 좋음)
+                .authorizeRequests()
+                    .antMatchers("/","/auth/**","/js/**","/css/**","/image/**")// /auth/ 이하의 모든 경로는
+                    .permitAll() // 누구나 접근이 가능하다
+                .anyRequest() // 그게 아니고는
+                    .authenticated() // 허락된 사람만 접근 가능하다.
+                .and()
+                    .formLogin()
+                    .loginPage("/auth/loginForm")
+                    .loginProcessingUrl("/auth/loginProc") // 스프링 시큐리티가 해당 주소로 요청오는 로그인을 가로채서 대신 로그인 해준다.
+                    .defaultSuccessUrl("/");
+    }
+}
+
+```
+
+해당 코드를 추가해준다.
+
+로그인요청이 오는 순간, loginProcessingUrl이 가로챈다. => username과 password 정보를 PrincipalDetailService에 있는 loadUserByUsername으로 보낸다.
+
+=> username을 비교해서 PrincipalDetail을 리턴해준다. => 리턴할때 비밀번호 체크를 한다. SecurityConfig의 configure을 통해서 principalDetailService가 로그인 요청을 하고
+
+=> auth.userDetailsService(principalDetailService) 이 리턴이 되면, passwordEncoder를 통해 encodePWD로 다시 암호화를 하고, 데이터 베이스와 비교한다.
+
+=> 비교가 끝나면 Spring Security 영역에 PrincipalDetail로 감싸져서 저장이 된다.
+
+<img width="1326" alt="스크린샷 2022-02-08 오후 10 29 04" src="https://user-images.githubusercontent.com/79779676/152996644-77c6465f-061e-401e-b65b-7bd56e682128.png">
