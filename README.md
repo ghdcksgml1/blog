@@ -512,3 +512,37 @@ public class UserService {
 위 코드와 같이 원래 User 객체를 받아서 rawPassword를 해시값으로 변경해주고, 변경된 해시값을 User 객체의 password로 설정해준다.
 
 그 뒤에 userRepository.save() 메소드를 통해 DB에 회원정보를 저장한다.
+
+<br/>
+
+### XSS와 CSRF 공격
+
+<strong>XSS</strong>는 (Cross Site Scripting) 의 약자로 주로 다른 웹사이트와 정보를 교환하는 식으로 작동하므로 사이트 간 스트립팅이라고 한다.
+
+크로스 사이트 스크립팅은 자바스크립트를 사용하여 공격하는 경우가 많다. 게시판 같은 공간에 <script> </script> 태그를 저장했을때, 이 스크립트가 서버에 저장돼 실행이 되어
+
+서버의 민감한 정보를 빼올수가 있게된다.
+
+<br/>
+
+<strong>CSRF</strong>는 (Cross Site Request Fogery)의 약자로 사이트간 요청을 위조하는 공격이다.
+
+선량한 사용자가 자신의 의지와는 무관하게 공격자가 의도한 행위를 웹사이트에 요청하게하는 공격을 말한다.
+
+ex) 예를들어, 운영자가 http://www.example.com/point?100&username?ghdcksgml 해당 GET요청을 보내면
+
+ghdcksgml라는 유저에게 100포인트가 지급된다고 해보자.
+
+위는 운영자만이 권한이 있기때문에, 일반사용자가 해당 GET요청을 보내도 아무런 응답이 없고, 오직 운영자만이 해당 GET요청을 했을때 동작한다.
+
+이 점을 이용해 아래와 같이 낚시를 진행한다.
+
+<img width="590" alt="스크린샷 2022-02-08 오후 4 57 21" src="https://user-images.githubusercontent.com/79779676/152942625-e2317b81-0075-43b7-8998-b272199bbcec.png">
+
+운영자가 낚여서 해당 링크를 클릭하게 된다면 ghdcksgml라는 유저에게 100포인트가 들어가게 되는 것이다.
+
+이것이 바로 CSRF 공격이다.
+
+<img width="814" alt="스크린샷 2022-02-08 오후 4 59 35" src="https://user-images.githubusercontent.com/79779676/152943017-edc70a0d-db25-4279-a513-802d72578edf.png">
+
+출처: https://lucete1230-cyberpolice.tistory.com/23
