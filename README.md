@@ -748,3 +748,168 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 => 비교가 끝나면 Spring Security 영역에 PrincipalDetail로 감싸져서 저장이 된다.
 
 <img width="1326" alt="스크린샷 2022-02-08 오후 10 29 04" src="https://user-images.githubusercontent.com/79779676/152996644-77c6465f-061e-401e-b65b-7bd56e682128.png">
+
+
+## 📁 글쓰기 기능 구현하기
+
+글쓰기 기능을 구현하기 위해서 가장먼저 글쓰기 페이지를 생성해줬다. (/resources/templates/board/saveForm.html)
+
+그 다음 홈에서 글쓰기 버튼을 눌렀을때, 글쓰기 페이지로 매핑되도록 BoardController에 (/board/saveForm) GET 요청을 받을 수 있도록 GetMapping을 추가했다.
+
+글을 쓸 수 있는 페이지인 saveForm.html에는 제목과 내용을 작성할 수 있도록했고, 글쓰기 완료버튼은 ajax통신을 위해 form태그 밖으로 꺼냈다.
+
+```html
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="/layout/fragments/header::header"/>
+<body>
+
+<div class="container">
+    <div th:replace="/layout/fragments/bodyHeader::bodyHeader"/>
+
+    <form>
+        <div class="form-group">
+            <label for="title">Username</label>
+            <input type="text" class="form-control" placeholder="Enter title" id="title">
+        </div>
+        <div class="form-group">
+            <label for="content">Content:</label>
+            <textarea class="form-control summernote" rows="5" id="content"></textarea>
+        </div>
+    </form>
+    <button id="save" class="btn btn-primary">글쓰기 완료</button>
+    <script>
+        $('.summernote').summernote({
+            placeholder: 'Hello Bootstrap 4',
+            tabsize: 2,
+            height: 300
+        });
+    </script>
+    <div th:replace="/layout/fragments/footer::footer"/>
+</div>
+</body>
+<script src="/js/board.js"></script>
+</html>
+```
+
+내용 부분에 텍스트 상자를 만들 수 있지만, 너무 허접해서 summer note를 사용했다. [summer note](https://summernote.org/getting-started/#for-bootstrap-4)
+
+해당 코드에서 위에서부터 script태그 2개까지는 각각 jQuery, boostrap4에 관련된 내용이므로 이미 추가했다면 지워주자.
+
+이제 ajax 통신을 해서 데이터베이스에 작성한 글을 넣어줘야하므로, (resources/static/js/board.js) 파일을 생성한다.
+
+user.js와 비슷하므로 데이터 맞춰주고 통신~
+
+```javascript
+let index = {
+    init:function(){
+        // btn-save 버튼이 클릭되면, save함수를 호출
+        document.querySelector("#save").addEventListener('click',()=>{
+            this.save();
+        });
+    },
+
+    save:function(){
+        let data = {
+            title: document.querySelector("#title").value,
+            content: document.querySelector("#content").value
+        }
+
+        // ajax 요청
+        fetch("/api/board",{
+            method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data=>{
+                alert("글쓰기 완료");
+                console.log(data);
+                location.href="/";
+            })
+            .catch(error=>{alert(error.message)});
+    }
+};
+
+index.init();
+```
+
+이렇게 되면, 글을 작성하고 글쓰기 완료 버튼을 누르게 되면, /api/board 로 post요청이 들어가게 된다.
+
+우리는 아직 board에 대한 api 처리를 하지 않았기 때문에
+
+BoardApiController(클래스), BoardService(클래스), BoardRepository(인터페이스) 를 각각 생성해준다.
+
+BoardApiController를 통해 BoardService에 Board,User 객체를 넘기면
+
+BoardService는 Board에 User객체를 넣어 DB에 저장해준다. ( Board에 누가쓴건지 저장하기 위한 User테이블이 있기 때문에 )
+
+```java
+// BoardApiController.class
+package com.cos.blog.controller.api;
+
+import com.cos.blog.config.auth.PrincipalDetail;
+import com.cos.blog.controller.dto.ResponseDto;
+import com.cos.blog.model.Board;
+import com.cos.blog.service.BoardService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+public class BoardApiController {
+
+    private final BoardService boardService;
+
+    @PostMapping("/api/board")
+    public ResponseDto<Integer> save(@RequestBody Board board, @AuthenticationPrincipal PrincipalDetail principal){
+        boardService.save(board,principal.getUser());
+        return new ResponseDto<>(HttpStatus.OK.value(), 1);
+    }
+}
+```
+
+```java
+// BoardService.class
+package com.cos.blog.service;
+
+import com.cos.blog.model.Board;
+import com.cos.blog.model.User;
+import com.cos.blog.repository.BoardRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class BoardService {
+
+    private final BoardRepository boardRepository;
+
+    @Transactional
+    public void save(Board board, User user){
+        board.setCount(0L);
+        board.setUser(user);
+        boardRepository.save(board);
+    }
+
+}
+```
+
+```java
+// BoardRepository.class
+package com.cos.blog.repository;
+
+import com.cos.blog.model.Board;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface BoardRepository extends JpaRepository<Board,Long> {
+
+}
+```
+
+이렇게 구현해서 글쓰기 완료를 눌러보면 아래처럼 DB에 잘 들어간 모습을 볼 수 있다.
+
+<img width="704" alt="스크린샷 2022-02-10 오후 8 39 31" src="https://user-images.githubusercontent.com/79779676/153401536-0cc1d461-934c-4fc7-92ae-1cc2a3a3e830.png">
