@@ -913,3 +913,111 @@ public interface BoardRepository extends JpaRepository<Board,Long> {
 이렇게 구현해서 글쓰기 완료를 눌러보면 아래처럼 DB에 잘 들어간 모습을 볼 수 있다.
 
 <img width="704" alt="스크린샷 2022-02-10 오후 8 39 31" src="https://user-images.githubusercontent.com/79779676/153401536-0cc1d461-934c-4fc7-92ae-1cc2a3a3e830.png">
+
+<br/>
+
+## 📁 글 목록 불러오기
+
+지금 구현하고 있는 게시판은 모든 유저의 글 목록들을 볼 수 있기 때문에 글 목록을 불러오는것은 아주 간단합니다.
+
+그냥 BoardRepository의 findAll() 메소드를 입력하면 List형태로 전체 글 목록을 조회할 수 있습니다.
+
+BoardService는 contentList메소드를 생성해주고 글 목록을 가져온 뒤 List로 반환해주면 됩니다.
+
+```java
+package com.cos.blog.service;
+
+import com.cos.blog.model.Board;
+import com.cos.blog.model.User;
+import com.cos.blog.repository.BoardRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class BoardService {
+
+    private final BoardRepository boardRepository;
+
+    @Transactional
+    public void save(Board board, User user){
+        board.setCount(0L);
+        board.setUser(user);
+        boardRepository.save(board);
+    }
+
+    // 아랫 부분입니당.
+    @Transactional(readOnly = true)
+    public List<Board> contentList(){
+        return boardRepository.findAll();
+    }
+}
+```
+
+이렇게 List형태로 반환하게되면, BoardController에서는 index.html(게시판)으로 해당 리스트를 넘겨주면 되는데
+
+스프링에서는 Model 객체를 이용합니다.
+
+```java
+package com.cos.blog.controller;
+
+import com.cos.blog.config.auth.PrincipalDetail;
+import com.cos.blog.service.BoardService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+@RequiredArgsConstructor
+public class BoardController {
+
+    private final BoardService boardService;
+
+    // 요부분 입니당.
+    @GetMapping({"","/"})
+    public String index(Model model){
+        model.addAttribute("boards",boardService.contentList());
+        return "index"; // viewResolver 작동
+    }
+
+    @GetMapping("/board/saveForm")
+    public String saveForm(){
+        return "board/saveForm";
+    }
+}
+```
+
+model.addAttribute("key","value") 이다.
+
+index.html에서 model에 추가한 것을 사용할 수 있다.
+
+```html
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="/layout/fragments/header::header"/>
+<body>
+
+<div class="container">
+    <div th:replace="/layout/fragments/bodyHeader::bodyHeader"/>
+
+    <div th:each="board : ${boards}">
+        <div class="card m-2">
+            <div class="card-body">
+                <h4 class="card-title" th:text="${board.getTitle()}">제목 적는 부분</h4>
+                <a href="#" class="btn btn-primary">상세 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="/layout/fragments/footer::footer"/>
+</div>
+</body>
+</html>
+```
+
+th:each 는 foreach와 같은 역할을 한다. boards가 List로 되어있기때문에, boards를 한개씩 가져와 제목을 넣어준다.
