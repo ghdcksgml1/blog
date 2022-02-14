@@ -1,6 +1,9 @@
 package com.cos.blog.test;
 
+import com.cos.blog.controller.dto.UserDto;
+import com.cos.blog.model.Board;
 import com.cos.blog.model.User;
+import com.cos.blog.repository.BoardRepository;
 import com.cos.blog.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,8 @@ public class DummyControllerTest {
 
      // 의존성 주입(DI)
     private final UserRepository userRepository;
+
+    private final BoardRepository boardRepository;
 
     // save함수는 id를 전달하지 않으면 insert를 해주고
     // save함수는 id를 전달하면 해당 id에 대한 데이터가 있으면 update를 해주고
@@ -63,8 +68,9 @@ public class DummyControllerTest {
 
     // 한페이지당 2건에 데이터를 리턴받아 볼 예정
     @GetMapping("/dummy/user/page")
-    public List<User> pageList(@PageableDefault(size=2,sort="id",direction= Sort.Direction.DESC)Pageable pageable){
-        List<User> users = userRepository.findAll(pageable).getContent();
+    public Page<User> pageList(@PageableDefault(size=2,sort="id",direction= Sort.Direction.DESC) Pageable pageable){
+        Page<User> users = userRepository.findAll(pageable);
+        System.out.println("HH");
         return users;
     }
 

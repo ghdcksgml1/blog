@@ -38,10 +38,10 @@ public class User extends TimeZone {
     private String email;
 
     // 쓴 게시글들
-    @OneToMany(mappedBy = "user")
-    private List<Board> boards = new ArrayList<>();
+//    @OneToMany(mappedBy = "user")
+//    private List<Board> boards = new ArrayList<>();
 
     // 쓴 댓글들
-    @OneToMany(mappedBy = "writer")
-    private List<Reply> replies = new ArrayList<>();
+//    @OneToMany(mappedBy = "writer")
+//    private List<Reply> replies = new ArrayList<>();
 }
