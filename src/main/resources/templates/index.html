@@ -10,7 +10,7 @@
         <div class="card m-2">
             <div class="card-body">
                 <h4 class="card-title" th:text="${board.getTitle()}">제목 적는 부분</h4>
-                <a href="#" class="btn btn-primary">상세 보기</a>
+                <a th:href="'/board/'+${board.getId()}" class="btn btn-primary">상세 보기</a>
             </div>
         </div>
     </div>
@@ -24,7 +24,7 @@
             <li class="page-item"><a class="page-link" th:href="'?page='+(${boards.number}-1)">Previous</a></li>
             <li class="page-item"><a class="page-link" th:href="'?page='+(${boards.number}+1)">Next</a></li>
         </td>
-        <td th:if="${boards.last}">
+        <td th:if="${boards.last} and !${boards.first}">
             <li class="page-item"><a class="page-link" th:href="'?page='+(${boards.number}-1)">Previous</a></li>
             <li class="page-item disabled"><a class="page-link" th:href="'?page='+(${boards.number}+1)">Next</a></li>
         </td>

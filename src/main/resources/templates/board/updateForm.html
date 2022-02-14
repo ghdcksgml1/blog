@@ -1,0 +1,35 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="/layout/fragments/header::header"/>
+<body>
+
+<div class="container">
+    <div th:replace="/layout/fragments/bodyHeader::bodyHeader"/>
+
+    <form>
+        <small><i class="text-secondary">작성 번호 : <span id="id" th:text="${board.id}"></span></i></small>
+        <br/>
+        <div class="form-group">
+            <label for="title">Username</label>
+            <input type="text" class="form-control" placeholder="Enter title" id="title" th:value="${board.getTitle()}">
+        </div>
+        <div class="form-group">
+            <label for="content">Content:</label>
+            <textarea class="form-control summernote" rows="5" id="content" th:utext="${board.getContent()}"></textarea>
+        </div>
+    </form>
+    <button id="save" class="btn btn-primary">글쓰기 완료</button>
+    <script>
+        $('.summernote').summernote({
+            placeholder: 'Hello Bootstrap 4',
+            tabsize: 2,
+            height: 300
+        });
+    </script>
+    <div th:replace="/layout/fragments/footer::footer"/>
+</div>
+</body>
+<script src="/js/update.js"></script>
+</html>
+
+

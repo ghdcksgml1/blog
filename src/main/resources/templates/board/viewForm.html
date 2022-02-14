@@ -1,0 +1,39 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+        xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="/layout/fragments/header::header"/>
+<body>
+
+<div class="container">
+    <div th:replace="/layout/fragments/bodyHeader::bodyHeader"/>
+
+    <br/>
+    <div>
+        <small><i class="text-secondary">작성 번호 : <span id="id" th:text="${board.id}"></span></i></small>
+        <span id="writer" class="d-flex justify-content-end" th:text="'작성자 : '+${board.getUser().getUsername()}"></span>
+    </div>
+    <div class="form-group">
+        <h1 th:text="${board.getTitle()}">제목</h1>
+    </div>
+    <hr/>
+    <br/><br/>
+    <div class="form-group">
+        <h4><td th:utext="${board.getContent()}"></td></h4>
+    </div>
+    <br/><br/>
+    <hr/>
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-secondary" onclick="history.back()">Back</button>
+        &nbsp;
+        <span th:if="${principal.getUsername()} == ${board.getUser().getUsername()}">
+            <a th:href="'/board/'+${board.getId()}+'/updateForm'" class="btn btn-warning">Edit</a>
+            <button id="delete-btn" class="btn btn-danger">Delete</button>
+        </span>
+    </div>
+    <div th:replace="/layout/fragments/footer::footer"/>
+</div>
+</body>
+<script src="/js/delete.js"></script>
+</html>
+
+
