@@ -25,4 +25,14 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void 회원수정(User user){
+        String rawPassword = user.getPassword();
+        String encPassword = encoder.encode(rawPassword);
+        User findUser = userRepository.findByUsername(user.getUsername()).orElseThrow(() -> {
+            return new IllegalArgumentException("조회 실패");
+        });
+        findUser.setPassword(encPassword);
+    }
+
 }

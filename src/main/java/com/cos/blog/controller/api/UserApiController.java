@@ -7,10 +7,7 @@ import com.cos.blog.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 
@@ -21,10 +18,15 @@ public class UserApiController {
     private final UserService userService;
 
     @PostMapping("/auth/joinProc")
-    public ResponseDto<Integer> save(@RequestBody User user){
+    public ResponseDto<Long> save(@RequestBody User user){
         userService.회원가입(user);
-        return new ResponseDto<Integer>(HttpStatus.OK.value(),1);
+        return new ResponseDto<Long>(HttpStatus.OK.value(),1L);
     }
 
+    @PutMapping("/user")
+    public ResponseDto<Long> update(@RequestBody User user){
+        userService.회원수정(user);
+        return new ResponseDto<>(HttpStatus.OK.value(), 1L);
+    }
 
 }
