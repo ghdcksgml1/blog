@@ -1021,3 +1021,9 @@ index.html에서 model에 추가한 것을 사용할 수 있다.
 ```
 
 th:each 는 foreach와 같은 역할을 한다. boards가 List로 되어있기때문에, boards를 한개씩 가져와 제목을 넣어준다.
+
+<br/>
+
+## 📁 스프링 시큐리티의 구조
+
+<img width="790" alt="스크린샷 2022-02-15 오후 4 59 31" src="https://user-images.githubusercontent.com/79779676/154017847-96a747ed-896d-4b2c-aabb-ed73dc647be2.png">
