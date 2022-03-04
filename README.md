@@ -13,7 +13,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver # mysql 설정
     url: jdbc:mysql://localhost:3306/blog?serverTimezone=Asia/Seoul
     username: root
-    password: hks13579
+    password: 
 
   jpa: # jpa 설정
     open-in-view: true # lazy Loading
